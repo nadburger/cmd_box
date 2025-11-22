@@ -19,6 +19,7 @@
 *.appx
 *.appxbundle
 *.nupkg
+x64/
 
 # Rider/Resharper
 _ReSharper*/

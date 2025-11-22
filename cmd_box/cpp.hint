@@ -1,0 +1,3 @@
+#define CMDBOX_API __declspec(dllexport)
+#define CMDBOX_API __declspec(dllimport)
+#define va_start

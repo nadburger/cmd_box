@@ -1,0 +1,69 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+*.ilk
+*.meta
+*.obj
+*.o
+*.pdb
+*.exe
+*.dll
+*.appx
+*.appxbundle
+*.nupkg
+
+# Rider/Resharper
+_ReSharper*/
+*.DotSettings.user
+
+# NuGet
+*.nupkg
+# The packages folder can be ignored because of PackageReference restore
+packages/
+project.lock.json
+project.fragment.lock.json
+
+# Microsoft Azure Web App publish settings
+.publish/
+
+# Visual Studio cache/options
+*.VC.db
+*.VC.VC.opendb
+
+# IIS Express
+/.vs/IISExpress/
+
+# User-specific files
+*.rsuser
+*.userprefs
+
+# MonoDevelop
+*.pidb
+*.userprefs
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# Client-side libraries (libman)
+wwwroot/lib/
+
+# Rider IDE
+.idea/
+
+# EF Core Migrations (optional - keep if you want to version migrations)
+#Migrations/
+
+# Secrets (explicitly ignore user secrets folder)
+secrets.json

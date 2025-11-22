@@ -20,6 +20,7 @@
 *.appxbundle
 *.nupkg
 x64/
+Release/
 
 # Rider/Resharper
 _ReSharper*/

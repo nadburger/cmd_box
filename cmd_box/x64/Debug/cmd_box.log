@@ -1,6 +1,0 @@
-﻿  pch.cpp
-  cmd_box.cpp
-  dllmain.cpp
-  Generating Code...
-     Creating library C:\Users\nadav\source\repos\cmd_box\x64\Debug\cmdbox.lib and object C:\Users\nadav\source\repos\cmd_box\x64\Debug\cmdbox.exp
-  cmd_box.vcxproj -> C:\Users\nadav\source\repos\cmd_box\x64\Debug\cmdbox.dll

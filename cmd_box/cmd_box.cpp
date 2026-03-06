@@ -31,20 +31,22 @@ static void get_first_word(const wchar_t* input, wchar_t* dest, size_t dest_size
     dest[i] = L'\0';
 }
 
+// Checks if the exe exists inside the paths
 static int is_executable_exists(const wchar_t* exe) {
 
     PWSTR exe_path = NULL;
+    wchar_t exe_name[MAXPATH];
+
+    swprintf_s(exe_name, L"%s.exe", exe);
 
     int dir_count = sizeof(dirs) / sizeof(dirs[0]);
     
     for (int i = 0; i < dir_count; i++) {
 
-        HRESULT hr = PathAllocCombine(dirs[i], exe, PATHCCH_NONE, &exe_path);
+        HRESULT hr = PathAllocCombine(dirs[i], exe_name, PATHCCH_NONE, &exe_path);
         if (FAILED(hr)) {
             continue;
         }
-
-        wcscat_s(exe_path, MAXPATH, L".exe");
 
         if (PathFileExistsW(exe_path)){ 
             CoTaskMemFree(exe_path);
@@ -64,7 +66,7 @@ int fncmdbox(const wchar_t* args)
     get_first_word(args, first_word, sizeof(first_word) / sizeof(wchar_t));
 
     if (!is_executable_exists(first_word)) {
-        printf("Coudn't find the exe path :(\n");
+        printf("Coudn't find the executable in the paths :(\n");
         return 1;
     }
 

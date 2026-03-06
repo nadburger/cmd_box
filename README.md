@@ -18,5 +18,7 @@ I'm going to add features so stay tuned!
 
 ## To do
 
+- Adding full path compatability instead of only relative paths
+- Load the executable and run it from the entry point instead of CreateProcess
 - Usage of the PATH variables for better compatibility
 - Obfuscation of the strings for more stealth 

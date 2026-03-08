@@ -11,7 +11,8 @@ mylib.fncmdbox.argtypes = [ctypes.c_wchar_p]
 mylib.fncmdbox.restype  = ctypes.c_int
 
 # Call the function with ONE wide string
-result = mylib.fncmdbox("ipconfig")
+result = mylib.fncmdbox("blabla")
 
-print(f"Returned with code: {result}")
-input("Press enter to exit...")
+if result:
+    print(f"Returned with code: {result}")
+    input("Press enter to exit...")

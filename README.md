@@ -1,6 +1,6 @@
 # cmd_box
 
-When you want to open a shell on a remote system but you don't want to open a process called cmd.
+When you want to run a command on a Windows machine but you don't want to open a process called cmd.
 
 The argument_checker python file is an example on how to call the dll.
 

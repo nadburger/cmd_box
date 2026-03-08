@@ -48,7 +48,7 @@ static void get_first_word(const wchar_t* input, wchar_t* dest, size_t dest_size
     dest[i] = L'\0';
 }
 
-// Checks if the exe exists inside the paths
+// Checks if the exe exists inside the paths 
 static PWSTR is_executable_exists(const wchar_t* exe, wchar_t** path_tokens, size_t path_count) {
     PWSTR exe_path = NULL;
     wchar_t exe_name[MAXPATH];
@@ -63,7 +63,7 @@ static PWSTR is_executable_exists(const wchar_t* exe, wchar_t** path_tokens, siz
 
         if (PathFileExistsW(exe_name)) {
             size_t len = wcslen(exe_name) + 1;
-            exe_path = (PWSTR)CoTaskMemAlloc(len * sizeof(wchar_t));
+            exe_path = (PWSTR)malloc(len * sizeof(wchar_t));
             if (exe_path) {
                 wcscpy_s(exe_path, len, exe_name);
                 return exe_path;
@@ -74,8 +74,7 @@ static PWSTR is_executable_exists(const wchar_t* exe, wchar_t** path_tokens, siz
 
     wprintf(L"%s is a relative path\n", exe);
 
-    // If the exe isnt an absolute path
-
+    // If the exe isn't an absolute path
 
     for (int i = 0; i < path_count; i++) {
         wchar_t* dir = path_tokens[i];
@@ -95,59 +94,93 @@ static PWSTR is_executable_exists(const wchar_t* exe, wchar_t** path_tokens, siz
             return exe_path;  // Caller must free this
         }
 
-        CoTaskMemFree(exe_path);
+        free(exe_path);
         exe_path = NULL;
     }
 
     return NULL;  // Not found or all attempts failed
 }
 
-int path_to_paths(const wchar_t* path_buffer,
-    wchar_t*** outTokens,
-    size_t* outCount,
-    wchar_t** outBuffer)
+// Splits the system PATH into tokens. On success returns 0 and sets:
+//  *outTokens -> allocated with new wchar_t*[count] (caller must delete[] it)
+//  *outCount  -> number of tokens
+//  *outBuffer -> duplicated mutable buffer allocated with malloc/_wcsdup (caller must free it)
+// On failure returns nonzero; no outputs are modified on error.
+int path_to_paths(wchar_t*** outTokens, size_t* outCount)
 {
-    if (!path_buffer || !outTokens || !outCount) return 1;
+    if (!outTokens || !outCount) 
+        return 1;
 
-    // Make a mutable copy because wcstok overwrites delimiters
-    wchar_t* buffer = _wcsdup(path_buffer);
-    if (!buffer) return 1;
+    DWORD size = GetEnvironmentVariableW(L"PATH", NULL, 0);
+    if (size == 0)
+        return 1;
+
+    wchar_t* buffer = (wchar_t*)malloc(size * sizeof(wchar_t));
+    if (!buffer)
+        return 1;
+
+    DWORD ret = GetEnvironmentVariableW(L"PATH", buffer, size);
+    if (ret == 0 || ret >= size) {
+        free(buffer);
+        return 1;
+    }
 
     // Dynamic array for the pointers
     size_t cap = 4;
     size_t count = 0;
     wchar_t** tokens = new wchar_t* [cap];
-    if (!tokens) { free(buffer); return 1; }
+    if (!tokens) {
+        free(buffer);
+        return 1;
+    }
 
     wchar_t* ctx = nullptr;
     wchar_t* tok = wcstok_s(buffer, L";", &ctx);
 
     while (tok) {
-
-        // Grow the array if needed
         if (count >= cap) {
             cap *= 2;
             wchar_t** tmp = new wchar_t* [cap];
-            if (!tmp) { delete[] tokens; free(buffer); return 1; }
+            if (!tmp) {
+                // Clean up existing tokens
+                for (size_t i = 0; i < count; ++i)
+                    free(tokens[i]);
 
+                delete[] tokens;
+                free(buffer);
+                return 1;
+            }
             for (size_t i = 0; i < count; ++i)
                 tmp[i] = tokens[i];
-
             delete[] tokens;
             tokens = tmp;
         }
 
-        tokens[count++] = tok;
+        // Copy the token
+        size_t len = wcslen(tok) + 1;
+        wchar_t* copy = (wchar_t*)malloc(len * sizeof(wchar_t));
+        if (!copy) {
+            // Clean up existing tokens
+            for (size_t i = 0; i < count; ++i)
+                free(tokens[i]);
 
-        // move to next token
+            delete[] tokens;
+            free(buffer);
+            return 1;
+        }
+
+        wcscpy_s(copy, len, tok);
+        tokens[count++] = copy;
+
         tok = wcstok_s(NULL, L";", &ctx);
     }
 
-    // Transfer ownership to the caller
+    // Free the original buffer since we've copied all tokens
+    free(buffer);
+
+    // Transfer ownership to caller
     *outTokens = tokens;
     *outCount = count;
-    *outBuffer = buffer;
-
     return 0;
 }
 
@@ -155,23 +188,14 @@ int path_to_paths(const wchar_t* path_buffer,
 // This is an example of an exported function.
 int fncmdbox(const wchar_t* args)
 {
-    bool absolute_path;
     wchar_t first_word[256];
     wchar_t** path_tokens = nullptr;
     size_t path_count = 0;
-    wchar_t* path_buffer_after;
     
     get_first_word(args, first_word, sizeof(first_word) / sizeof(wchar_t));
 
-    // This is to make the path buffer the corrext size
-    DWORD size = GetEnvironmentVariableW(L"PATH", NULL, 0);
-    wchar_t* path_buffer_before = new wchar_t[size];
-
-    // Sets the paths variables
-    GetEnvironmentVariableW(L"PATH", path_buffer_before, size);
-
     // Splits the path variable to an array of paths
-    if (path_to_paths(path_buffer_before, &path_tokens, &path_count, &path_buffer_after) == 0) {
+    if (!path_to_paths(&path_tokens, &path_count)) {
         for (size_t i = 0; i < path_count; ++i) {
             wprintf(L"token[%zu] = %ls\n", i, path_tokens[i]);
         }
@@ -183,7 +207,8 @@ int fncmdbox(const wchar_t* args)
 
     if (exe_path == NULL) {
         printf("Coudn't find the executable :(\n");
-        CoTaskMemFree(exe_path);
+        delete[] path_tokens;
+        free(exe_path);
         return 1;
     }
 
@@ -199,11 +224,13 @@ int fncmdbox(const wchar_t* args)
         HIGH_PRIORITY_CLASS, NULL, NULL, &si, &pi)) {
         DWORD err = GetLastError();
         printf("CreateProcess failed: %lu\n", err);
+        delete[] path_tokens;
+        free(exe_path);
         return 1;
     }
 
-    free(path_buffer_after); //Delete path_buffer_after only at the end, otherwise it's interupting the tokens
-    CoTaskMemFree(exe_path);
+    delete[] path_tokens;
+    free(exe_path);
     WaitForSingleObject(pi.hProcess, INFINITE);
     CloseHandle(pi.hThread);
     CloseHandle(pi.hProcess);
